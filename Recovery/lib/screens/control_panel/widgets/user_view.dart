@@ -73,7 +73,7 @@ class _UserViewState extends State<UserView> {
                 ),
                 const Text('Account Information'),
                 _buildTile('Name', widget.agent.agentName),
-                _buildTile('Mobile Number', "99999999"),
+                _buildTile('Mobile Number', widget.agent.email),
                 _buildTile('Address', widget.agent.address),
                 // Container(
                 //   margin: const EdgeInsets.only(top: 15),

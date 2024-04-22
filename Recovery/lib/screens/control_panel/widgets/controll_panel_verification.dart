@@ -25,8 +25,8 @@ class _ControlPanelVerificationState extends State<ControlPanelVerification> {
   String? pass;
   @override
   void initState() {
-    // password = Storage.getControlPanelPassword();
-    password = Future.delayed(Duration.zero, () => "1234");
+    password = Storage.getControlPanelPassword();
+    // password = Future.delayed(Duration.zero, () => "1234");
     super.initState();
   }
 
@@ -53,7 +53,7 @@ class _ControlPanelVerificationState extends State<ControlPanelVerification> {
             if (snp.connectionState != ConnectionState.done) {
               return const CircularProgressIndicator();
             }
-            if (snp.data != null) {
+            if (snp.data != null && snp.data != '') {
               pass = snp.data;
               return Column(
                 children: [

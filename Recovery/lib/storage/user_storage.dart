@@ -20,6 +20,7 @@ class Storage {
 
   static Future<void> logOutUser() async {
     await sharedPreference.setString("user", '');
+    await sharedPreference.setString("pass", '');
   }
 
   static Future<UserModel?> getUser() async {

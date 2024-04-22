@@ -118,7 +118,7 @@ class Agent {
       id: int.parse(json['id']),
       profile: json['profile'],
       agentName: json['agent_name'],
-      email: json['email'],
+      email: json['admin_data']['phone'],
       address: json['address'],
       aadhaarCard: json['aadhaar_card'],
       panCard: json['pan_card'],
