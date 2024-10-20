@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:recovery_app/models/agency_details.dart';
 import 'package:recovery_app/models/search_item_model.dart';
+import 'package:recovery_app/screens/HomePage/cubit/home_cubit.dart';
 
 class RemoteSqlServices {
   static Future<List<SearchResultItem>> searchVehicles(
@@ -12,9 +16,14 @@ class RemoteSqlServices {
   ) async {
     log("search online vehicle");
     Dio dio = Dio();
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (cert, host, port) => true;
+      return client;
+    };
     String url = isOnVehicleNumber
-        ? 'https://converter.starkinsolutions.com/search-vn'
-        : 'https://converter.starkinsolutions.com/search-cn';
+        ? 'https://converter.okrepo.in/search-vn'
+        : 'https://converter.okrepo.in/search-cn';
     var response = await dio.post<List>(
       url,
       data: jsonEncode({
@@ -59,5 +68,27 @@ class RemoteSqlServices {
       });
     }
     return SearchResultItem.mergeDuplicateItems(result);
+  }
+
+  static Future<void> updateRemoteCount(
+    HomeCubit homeCubit,
+  ) async {
+    Dio dio = Dio();
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (cert, host, port) => true;
+      return client;
+    };
+    var result = await dio.get(
+        "https://converter.okrepo.in/count?agencyId=${AgencyDetails().id}");
+    if (result.statusCode == 200) {
+      try {
+        int count = result.data['count'];
+        homeCubit.updateDataCountOnline(count);
+      } catch (e) {
+        print("error at 47581695");
+        print(e);
+      }
+    }
   }
 }

@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:dio/io.dart';
 
 import 'package:dio/dio.dart';
 
@@ -6,8 +8,13 @@ class ControlPanelService {
   static final Dio dio = Dio();
 
   static Future<List<Agent>> getAllUsers(String agencyId) async {
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (cert, host, port) => true;
+      return client;
+    };
     var response = await dio.get(
-      "https://www.recovery.starkinsolutions.com/alluser.php",
+      "https://okrepo.in/alluser.php",
     );
     print(response.data);
     if (response.statusCode == 200) {
@@ -24,8 +31,13 @@ class ControlPanelService {
 
   static Future<Map<String, List<String>>> getAllFinances(
       String agencyId) async {
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (cert, host, port) => true;
+      return client;
+    };
     var response = await dio.get(
-      "https://www.recovery.starkinsolutions.com/Allbankbranch.php",
+      "https://okrepo.in/Allbankbranch.php",
       data: jsonEncode({"admin_id": agencyId}),
     );
     if (response.statusCode == 200) {
@@ -66,16 +78,28 @@ class ControlPanelService {
   }
 
   static void switchAdminAccess(bool value, int agentId) async {
+    print("switching admin acces to ${value} for ${agentId}");
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (cert, host, port) => true;
+      return client;
+    };
     var response = await dio.post(
-      "https://www.recovery.starkinsolutions.com/staffactive.php",
+      "https://okrepo.in/staffactive.php",
       data: jsonEncode({"agent_id": agentId, "staff": value ? 1 : 0}),
     );
     print(response.data);
   }
 
   static void switchActiveAccess(bool value, int agentId) async {
+    print("switching active acces to ${value} for ${agentId}");
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (cert, host, port) => true;
+      return client;
+    };
     var response = await dio.post(
-      "https://www.recovery.starkinsolutions.com/activeagent.php",
+      "https://okrepo.in/activeagent.php",
       data: jsonEncode({"agent_id": agentId, "status": value ? 1 : 0}),
     );
     print(response.data);

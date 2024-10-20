@@ -60,7 +60,7 @@ app.post("/run", upload.single("logo"), async (req, res) => {
     res.status(401).json({ message: "logo image is missing" });
     return;
   }
-  res.status(200).json({ message: "request recieved" });
+  res.sendFile(path.join(__dirname, "display.html"));
   const targetImageDirectory = process.cwd() + "/Recovery/assets/icons"; //I will add it later.
 
   try {
@@ -80,10 +80,12 @@ app.post("/run", upload.single("logo"), async (req, res) => {
     child.send({ command: "start", outputDir, agencyId });
     child.on("message", (result) => {
       if (result.apkPath) {
+        console.log("apk generated sucess");
         current = current - 1;
         updateAndWriteCounts();
       } else {
         console.log(result);
+        console.log("apk generated failed");
       }
     });
   } catch (error) {

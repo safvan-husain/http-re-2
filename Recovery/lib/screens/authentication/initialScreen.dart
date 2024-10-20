@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:recovery_app/bottom_navigation/bottom_navigation_page.dart';
 import 'package:recovery_app/screens/HomePage/cubit/home_cubit.dart';
 import 'package:recovery_app/screens/authentication/device_verify_screen.dart';
-import 'package:recovery_app/screens/authentication/otp_login.dart';
+import 'package:recovery_app/screens/authentication/login.dart';
 import 'package:recovery_app/storage/user_storage.dart';
 
 class InitialScreen extends StatefulWidget {
@@ -44,7 +44,7 @@ class _InitialScreenState extends State<InitialScreen> {
     } else {
       if (context.mounted) {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (c) => const OtpLogin()),
+          MaterialPageRoute(builder: (c) => const Login()),
         );
       }
     }

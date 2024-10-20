@@ -43,6 +43,18 @@ class Storage {
     return null;
   }
 
+  static Future<void> setOnlineCount(int count) async {
+    await sharedPreference.setInt('online_count', count);
+  }
+
+  static Future<void> removeOnlineCount() async {
+    await sharedPreference.remove('online_count');
+  }
+
+  static int? getOnineCount() {
+    return sharedPreference.getInt('online_count');
+  }
+
   static Future<void> setProcessedFileIndex(int count) async {
     log("setting processed file index to $count");
     await sharedPreference.setInt("file", count);

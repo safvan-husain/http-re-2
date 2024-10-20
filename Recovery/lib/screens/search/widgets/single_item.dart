@@ -29,6 +29,7 @@ class _SingleItemScreenState extends State<SingleItemScreen> {
     "VEHICLE NO",
     "CHASSIS NO",
     "MODEL",
+    "MAKE",
     "ENGINE NO",
     "CUSTOMER NAME",
   ].map((e) => e.toLowerCase()).toList();

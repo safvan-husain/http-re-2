@@ -15,7 +15,7 @@ class UnApprovedScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset('assets/icons/logo.jpeg'),
+              Image.asset('assets/icons/logo.png'),
               Text(
                 "Thank you for your interest in joining, We will let you know once approved",
                 textAlign: TextAlign.center,

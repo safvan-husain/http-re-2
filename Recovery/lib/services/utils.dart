@@ -109,7 +109,9 @@ class Utils {
     }
     if (!isStaff) {
       lines.add(
-          "Model : ${map['make'] ?? map['model'] ?? map['MAKE'] ?? map['MODEL'] ?? ""}");
+          "Model : ${map['model']?.isNotEmpty ?? false ? map['model'] : map['MODEL'] ?? ""}");
+      lines.add(
+          "make : ${map['make']?.isNotEmpty ?? false ? map['make'] : map['MAKE'] ?? ""}");
     }
 
     return lines.map((e) => e.toUpperCase()).join('\n');

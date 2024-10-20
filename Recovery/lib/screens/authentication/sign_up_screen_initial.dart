@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:recovery_app/resources/snack_bar.dart';
-import 'package:recovery_app/screens/authentication/otp_login.dart';
+import 'package:recovery_app/resources/text_fiealds.dart';
+import 'package:recovery_app/screens/authentication/login.dart';
 import 'package:recovery_app/services/auth_services.dart';
 import 'package:recovery_app/services/image_file_reciever.dart';
 import 'package:recovery_app/services/sim_services.dart';
@@ -14,12 +15,11 @@ import 'package:recovery_app/services/utils.dart';
 class SignUpScreenInitial extends StatefulWidget {
   final String agencyName;
   final String agencyId;
-  final String phoneNumber;
+
   const SignUpScreenInitial({
     super.key,
     required this.agencyName,
     required this.agencyId,
-    required this.phoneNumber,
   });
 
   @override
@@ -102,10 +102,8 @@ class _SignUpScreenInitialState extends State<SignUpScreenInitial> {
                         icon: FontAwesomeIcons.user,
                         label: 'Full Name',
                       ),
-                      _inputFieald(
+                      buildPhoneInputField(
                         controller: _emailController,
-                        icon: Icons.mail_outline,
-                        label: 'Email ID (optional)',
                       ),
                       _inputFieald(
                         controller: _passwordController,
@@ -214,7 +212,7 @@ class _SignUpScreenInitialState extends State<SignUpScreenInitial> {
                             adharCard: adharCard!,
                             agencyId: widget.agencyId,
                             address: _addressController.text,
-                            phone: widget.phoneNumber,
+                            phone: _emailController.text,
                             state: _stateController.text,
                             district: _districtController.text,
                             pinCode: _pinCodeController.text,
@@ -293,7 +291,7 @@ class _SignUpScreenInitialState extends State<SignUpScreenInitial> {
                     InkWell(
                       onTap: () {
                         Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (c) => const OtpLogin()),
+                          MaterialPageRoute(builder: (c) => const Login()),
                           (p) => false,
                         );
                       },

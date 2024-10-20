@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:developer';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:recovery_app/screens/HomePage/cubit/home_cubit.dart';
+import 'package:recovery_app/services/remote_sql_services.dart';
 import 'package:recovery_app/services/utils.dart';
 import 'package:recovery_app/storage/database_helper.dart';
 import 'package:recovery_app/storage/user_storage.dart';
@@ -26,7 +28,6 @@ class CsvFileServices {
     int readFileIndex = await Storage.getProcessedFileIndex();
     // if (readFileIndex == 0) readFileIndex = -1;
     //don't want to re process the last file if there is no new data (readFileIndex + 1).
-    print("starting with ${readFileIndex + 1} of ${files.length}");
     for (var i = readFileIndex + 1; i < files.length; i++) {
       List<List<String>> rows = [];
       var startTime = DateTime.now();
@@ -36,58 +37,75 @@ class CsvFileServices {
 
       late List<String> titles;
       final reader = file.openRead();
-      final decoder = utf8.decoder;
       var buffer = '';
+      List<int> temp = [];
       int? vehicleNumberColumIndex;
       //for choosing whether to add to  .
       bool foundValidTitle = false;
-      await for (var data in reader) {
-        buffer += decoder.convert(data);
-        while (buffer.contains('\n')) {
-          var lineEndIndex = buffer.indexOf('\n');
-          var line = buffer.substring(0, lineEndIndex);
-          // print(line);
-
-          var items = _splitStringIgnoringQuotes(line);
-          //adding file name which contain info about finance and branch for adding it into the details.
-          // log(items.toString());
-          if (!foundValidTitle) {
-            log("on not found title : ${basenameWithoutExtension(file.path)}");
-            // count++;
-            titles = items;
-            titles = items.map((e) => e.replaceAll(".", "")).toList();
-            log(titles.toString());
-            foundValidTitle = true;
-            if (titles.contains('VEHICAL NO'.toLowerCase()) ||
-                titles.contains('vehicalno') ||
-                titles.contains('vehicleno') ||
-                titles.contains('vehicle no')) {
-              vehicleNumberColumIndex =
-                  titles.indexOf('VEHICAL NO'.toLowerCase());
-              if (vehicleNumberColumIndex == -1) {
-                vehicleNumberColumIndex = titles.indexOf('vehicalno');
-              }
-              if (vehicleNumberColumIndex == -1) {
-                vehicleNumberColumIndex = titles.indexOf('vehicleno');
-              }
-              if (vehicleNumberColumIndex == -1) {
-                vehicleNumberColumIndex = titles.indexOf('vehicle no');
-              }
+      try {
+        await for (var data in reader) {
+          try {
+            if (temp.isNotEmpty) {
+              temp.addAll(data);
+              buffer += utf8.decode(temp);
+              log("temp read succes");
+            } else {
+              temp.addAll(data);
+              buffer += utf8.decode(data);
+              temp.clear();
             }
-          } else {
-            // count++;
-            // if (items.where((element) => element.isNotEmpty).isNotEmpty) {
-            while (items.length < titles.length) {
-              items.add("");
-            }
-            items.add(basenameWithoutExtension(file.path));
-            rows.add(items);
+          } catch (e) {
+            print("decode error here at 23578923");
+            print(e);
           }
 
-          // Process your line here
-          buffer = buffer.substring(lineEndIndex + 1);
+          while (buffer.contains('\n')) {
+            var lineEndIndex = buffer.indexOf('\n');
+            var line = buffer.substring(0, lineEndIndex);
+            // print(line);
+
+            var items = _splitStringIgnoringQuotes(line);
+            //adding file name which contain info about finance and branch for adding it into the details.
+            // log(items.toString());
+            if (!foundValidTitle) {
+              titles = items;
+              titles = items.map((e) => e.replaceAll(".", "")).toList();
+              log(titles.toString());
+              foundValidTitle = true;
+              if (titles.contains('VEHICAL NO'.toLowerCase()) ||
+                  titles.contains('vehicalno') ||
+                  titles.contains('vehicleno') ||
+                  titles.contains('vehicle no')) {
+                vehicleNumberColumIndex =
+                    titles.indexOf('VEHICAL NO'.toLowerCase());
+                if (vehicleNumberColumIndex == -1) {
+                  vehicleNumberColumIndex = titles.indexOf('vehicalno');
+                }
+                if (vehicleNumberColumIndex == -1) {
+                  vehicleNumberColumIndex = titles.indexOf('vehicleno');
+                }
+                if (vehicleNumberColumIndex == -1) {
+                  vehicleNumberColumIndex = titles.indexOf('vehicle no');
+                }
+              }
+            } else {
+              // count++;
+              // if (items.where((element) => element.isNotEmpty).isNotEmpty) {
+              while (items.length < titles.length) {
+                items.add("");
+              }
+              items.add(basenameWithoutExtension(file.path));
+              rows.add(items);
+            }
+
+            // Process your line here
+            buffer = buffer.substring(lineEndIndex + 1);
+          }
+          await homeCubit.updateDataCount();
         }
-        homeCubit.updateDataCount();
+      } catch (e) {
+        print('error at csv file 4');
+        print(e);
       }
       if (rows.isNotEmpty) {
         count += rows.length;
@@ -106,6 +124,7 @@ class CsvFileServices {
     }
     print("lines $count");
     homeCubit.updateDataCount();
+    await RemoteSqlServices.updateRemoteCount(homeCubit);
     streamController.sink.add(null);
   }
 
@@ -115,6 +134,11 @@ class CsvFileServices {
     void Function(int, int)? onReceiveProgress,
   ) async {
     Dio dio = Dio();
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (cert, host, port) => true;
+      return client;
+    };
 
     dio.options.headers['Connection'] = 'keep-alive';
     dio.options.headers['Accept-Encoding'] = 'gzip, deflate';
@@ -127,7 +151,12 @@ class CsvFileServices {
     ));
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String savePath = '${appDocDir.path}/vehicle details/$fileName';
-    await dio.download(url, savePath, onReceiveProgress: (i, x) {});
+    log('before download');
+    print(url);
+    await dio.download(url, savePath, onReceiveProgress: (i, x) {
+      print('progress');
+    });
+    log('after download');
     return savePath;
   }
 
@@ -139,28 +168,41 @@ class CsvFileServices {
   ]) async {
     List<String> downloadedPaths = [];
     streamController.sink.add(null);
-    String url = "https://converter.starkinsolutions.com/data";
+    String url = "https://converter.okrepo.in/data";
     final dio = Dio();
+    (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final client = HttpClient();
+      client.badCertificateCallback = (cert, host, port) => true;
+      return client;
+    };
+    Map<String, int> existingFiles = generateFileNameIdMap(fileNames);
+    print("this is the exsting files $existingFiles");
     final response = await dio.post(url,
         data: jsonEncode({
-          "filenames": generateFileNameIdMap(fileNames),
+          "filenames": existingFiles,
           "agencyId": agencyId,
         }));
-    print(response);
+
     if (response.statusCode == 200) {
       Map<String, String> downloadLinksAndNames = {};
+      print(
+          "lengtht of the missing files ${response.data['missingFiles'].length}");
 
       response.data['missingFiles'].forEach((link) {
         Uri uri = Uri.parse(link);
         String fileName = uri.pathSegments.last;
+        print(fileName);
         downloadLinksAndNames[fileName] = link;
       });
+      print(
+          "number of file to be downloaded is ${downloadLinksAndNames.length}");
 //getting deleted filenames from node server, then performing delete.
       List<String> deletedFiles = [];
       response.data['deleted'].forEach((fileName) {
         deletedFiles.add(fileName);
       });
       await deleteFiles(deletedFiles);
+      print(downloadLinksAndNames);
 
       await DatabaseHelper.deleteDataInTheFiles(deletedFiles);
       homeCubit.updateDataCount();
@@ -169,8 +211,9 @@ class CsvFileServices {
         homeCubit.updateDataCount();
         var map = downloadLinksAndNames.entries.toList().elementAt(i);
         String downloadedPath = await _downloadFile(
-            map.value.replaceAll('/home/starkina/', 'https://www.'), map.key,
-            (received, total) {
+            map.value.replaceAll('/root/projects/xlsx-to-csv/csv_files/',
+                'https://converter.okrepo.in/download/'),
+            map.key, (received, total) {
           if (total != -1) {
             // print('${(received / total * 100).toStringAsFixed(0)}%');
           }
@@ -276,8 +319,8 @@ class CsvFileServices {
         //sorting to get the last added file at the last of the array.
         ..sort(
             (a, b) => a.statSync().modified.compareTo(b.statSync().modified));
-      generateFileNameIdMap(
-          filesInOrder.map((e) => basenameWithoutExtension(e.path)).toList());
+      print("thse are the files found ${filesInOrder.map((e) => e.path)}");
+
       return filesInOrder;
     } else {
       print("No excel files found");
@@ -329,6 +372,6 @@ Map<String, int> generateFileNameIdMap(List<String> filesNames) {
       map[fileName] = int.parse(id);
     }
   }
-  print(map);
+  print("this is it $map");
   return map;
 }

@@ -3,8 +3,10 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:flutter/material.dart';
 import 'package:recovery_app/models/agency_details.dart';
 import 'package:recovery_app/models/subscription_details.dart';
+import 'package:recovery_app/services/auth_services.dart';
 import 'package:recovery_app/services/utils.dart';
 
 // ignore_for_file: public_member_api_docs, sort_constructors_first
@@ -48,6 +50,17 @@ class UserModel {
     log("existing userID $deviceId, vs current $imei");
     return true;
     // return imei == deviceId;
+  }
+
+  Future<bool> verifyDeviceOnline(BuildContext context) async {
+    String imei = await Utils.getImei();
+    if (await Utils.isConnected()) {
+      changeDeviceId(imei);
+      print(imei);
+      return await AuthServices.deviceCheck(agentId, context, imei);
+    } else {
+      return await verifyDevice();
+    }
   }
 
   void changeDeviceId(String deviceId) {

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:recovery_app/models/agency_details.dart';
 import 'package:recovery_app/resources/snack_bar.dart';
 import 'package:recovery_app/resources/text_fiealds.dart';
-import 'package:recovery_app/screens/authentication/otp_login.dart';
+import 'package:recovery_app/screens/authentication/sign_up_screen_initial.dart';
 import 'package:recovery_app/services/auth_services.dart';
 
 class Login extends StatefulWidget {
@@ -72,7 +73,7 @@ class _LoginState extends State<Login> {
                             onTap: () {
                               Navigator.of(context).pushAndRemoveUntil(
                                 MaterialPageRoute(
-                                    builder: (c) => const OtpLogin()),
+                                    builder: (c) => const Login()),
                                 (route) => false,
                               );
                             },
@@ -141,8 +142,11 @@ class _LoginState extends State<Login> {
                 const SizedBox(height: 40),
                 InkWell(
                   onTap: () {
-                    Navigator.of(context).push(
-                        MaterialPageRoute(builder: (c) => const OtpLogin()));
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (c) => SignUpScreenInitial(
+                              agencyId: AgencyDetails().id,
+                              agencyName: AgencyDetails().agencyName,
+                            )));
                   },
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,

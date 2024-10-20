@@ -12,7 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:recovery_app/models/subscription_details.dart';
 import 'package:recovery_app/resources/assets_manager.dart';
 import 'package:recovery_app/screens/HomePage/cubit/home_cubit.dart';
-import 'package:recovery_app/screens/authentication/otp_login.dart';
+import 'package:recovery_app/screens/authentication/login.dart';
 import 'package:recovery_app/screens/common_widgets/count_down_ui.dart';
 import 'package:recovery_app/screens/profile_sc/id_card_screen.dart';
 import 'package:recovery_app/services/auth_services.dart';
@@ -491,7 +491,7 @@ class _ProfileScViewState extends State<ProfileScView>
                         : imageUrl == null
                             ? Image.asset('assets/icons/user.png').image
                             : NetworkImage(
-                                "https://www.recovery.starkinsolutions.com/$imageUrl",
+                                "https://okrepo.in/$imageUrl",
                               )),
                 Positioned(
                   // alignment: Alignment.bottomRight,
@@ -599,7 +599,7 @@ class _ProfileScViewState extends State<ProfileScView>
                       await Storage.logOutUser();
                       if (context.mounted) {
                         Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (c) => const OtpLogin()),
+                          MaterialPageRoute(builder: (c) => const Login()),
                           (route) => false,
                         );
                       }

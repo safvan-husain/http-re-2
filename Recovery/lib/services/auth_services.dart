@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:uuid/uuid.dart';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:dio/io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:recovery_app/bottom_navigation/bottom_navigation_page.dart';
@@ -19,6 +21,52 @@ import 'package:recovery_app/storage/user_storage.dart';
 
 class AuthServices {
   static final Dio dio = Dio();
+  static Future<bool> deviceCheck(
+    String agentId,
+    BuildContext context,
+    String deviceId,
+  ) async {
+    try {
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) => true;
+        return client;
+      };
+      dio.interceptors.add(InterceptorsWrapper(
+        onError: (DioException e, s) async {
+          if (e.response?.statusCode == 401) {
+            if (context.mounted) {
+              showSnackbar("Bad request", context, Icons.warning);
+              // throw Error();
+            }
+          } else {
+            // For other errors, rethrow the exception
+            throw e;
+          }
+        },
+      ));
+      var response = await dio.post(
+        "https://okrepo.in/device_check.php",
+        data: jsonEncode({
+          "admin_id": agentId,
+          "device_id": deviceId,
+        }),
+      );
+      if (response.statusCode == 200) {
+        print(response.data);
+        if (jsonDecode(response.data)['status'] == "failed") {
+          return false;
+        } else {
+          return true;
+        }
+      }
+      return false;
+    } catch (er) {
+      print('error at deviceCheck authservice');
+      print(er);
+      return false;
+    }
+  }
 
   static Future<void> loginUser({
     required String userName,
@@ -27,10 +75,15 @@ class AuthServices {
     required BuildContext context,
   }) async {
     if (await Utils.isConnected()) {
-      print("login");
+      print("login ${AgencyDetails().id}");
       // dio.options.validateStatus;
 
       try {
+        (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+          final client = HttpClient();
+          client.badCertificateCallback = (cert, host, port) => true;
+          return client;
+        };
         dio.interceptors.add(InterceptorsWrapper(
           onError: (DioException e, s) async {
             if (e.response?.statusCode == 401) {
@@ -45,17 +98,17 @@ class AuthServices {
           },
         ));
         var response = await dio.post(
-          "https://www.recovery.starkinsolutions.com/loginapi.php",
+          "https://okrepo.in/loginapi.php",
           data: jsonEncode({
             "phone": int.parse(phoneNumber),
             "password": password,
             "agency_id": AgencyDetails().id,
           }),
         );
-        var decoded = jsonDecode(jsonEncode(response.data));
         if (response.statusCode == 200) {
-          if (decoded['Add_data'] != null && decoded['user_data'] != null) {
-            if (decoded['user_data']['status'] == "1") {
+          var decoded = jsonDecode(jsonEncode(response.data));
+          if (decoded['Add_data'] != null) {
+            if (decoded['Add_data']['status'] == "1") {
               var user = UserModel.fromServerJson2(response.data);
 
               if (await user.verifyDevice() && context.mounted) {
@@ -125,8 +178,13 @@ class AuthServices {
   static Future<List<Map<String, dynamic>>> getAgencyList() async {
     List<Map<String, dynamic>> list = [];
     try {
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) => true;
+        return client;
+      };
       var response = await dio.get(
-        "https://www.recovery.starkinsolutions.com/listagency.php",
+        "https://okrepo.in/listagency.php",
       );
       if (response.statusCode == 200) {
         var res = jsonDecode(response.data);
@@ -148,8 +206,13 @@ class AuthServices {
     bool isLogin = true,
   }) async {
     try {
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) => true;
+        return client;
+      };
       var response = await dio.post(
-        "https://www.recovery.starkinsolutions.com/smsapi.php",
+        "https://okrepo.in/smsapi.php",
         data: jsonEncode({
           "phone_number": int.parse(phone),
           "agency_id": AgencyDetails().id,
@@ -205,8 +268,13 @@ class AuthServices {
   static Future<void> requestDeviceIdChange(
       UserModel user, String newDeviceId) async {
     try {
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) => true;
+        return client;
+      };
       await dio.post(
-        'https://www.recovery.starkinsolutions.com/add_device_req.php',
+        'https://okrepo.in/add_device_req.php',
         data: jsonEncode({
           "agent_name": user.agent_name,
           "device_id": newDeviceId,
@@ -237,8 +305,16 @@ class AuthServices {
   }) async {
     log("sign up called");
     try {
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) => true;
+        return client;
+      };
+      var uuid = Uuid();
+      String uniqueId = uuid.v4();
+
       var response = await dio.post(
-        "https://www.recovery.starkinsolutions.com/registerapi.php",
+        "https://okrepo.in/registerapi.php",
         data: jsonEncode({
           "phone_number": phone,
           "name": userName,
@@ -251,6 +327,10 @@ class AuthServices {
           'village': village,
           'pincode': pinCode,
           'device': deviceId,
+          'pan_card':
+              "https://okrepo.in/uploads/agent_proof/${uniqueId}/${panCard.path.split('/').last}",
+          'aadhaar_card':
+              "https://okrepo.in/uploads/agent_proof/${uniqueId}/${adharCard.path.split('/').last}"
         }),
       );
       print(response.data);
@@ -280,9 +360,10 @@ class AuthServices {
               ),
             );
             formData.fields.add(MapEntry('agentName', userName));
+            formData.fields.add(MapEntry('foldName', uniqueId));
 
             Response re = await dio.post(
-              'https://www.recovery.starkinsolutions.com/addImage.php',
+              'https://okrepo.in/addImage.php',
               data: formData,
               options: Options(
                 headers: {'Content-Type': 'multipart/form-data'},
@@ -336,9 +417,14 @@ class AuthServices {
         ),
       );
       formData.fields.add(MapEntry('email', email));
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) => true;
+        return client;
+      };
 
       Response re = await dio.post(
-        'https://www.recovery.starkinsolutions.com/add_profile.php',
+        'https://okrepo.in/add_profile.php',
         data: formData,
         options: Options(
           headers: {'Content-Type': 'multipart/form-data'},

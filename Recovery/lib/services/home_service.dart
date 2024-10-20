@@ -1,7 +1,9 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 
 import 'package:recovery_app/models/agency_details.dart';
 import 'package:recovery_app/models/subscription_details.dart';
@@ -15,8 +17,13 @@ class HomeServices {
     final Dio dio = Dio();
     try {
       if (await Utils.isConnected()) {
+        (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+          final client = HttpClient();
+          client.badCertificateCallback = (cert, host, port) => true;
+          return client;
+        };
         var response = await dio.post(
-          'https://www.recovery.starkinsolutions.com/lastfile.php',
+          'https://okrepo.in/lastfile.php',
           data: jsonEncode({
             "admin_id": agencyId,
           }),
@@ -40,8 +47,13 @@ class HomeServices {
     final dio = Dio();
 
     try {
+      (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final client = HttpClient();
+        client.badCertificateCallback = (cert, host, port) => true;
+        return client;
+      };
       Response response = await dio.post(
-        'https://www.recovery.starkinsolutions.com/device.php',
+        'https://okrepo.in/device.php',
         data: jsonEncode(
           {"admin_id": agencyId},
         ),
@@ -76,9 +88,14 @@ class HomeServices {
           return null;
         } else {
           Dio dio = Dio();
+          (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+            final client = HttpClient();
+            client.badCertificateCallback = (cert, host, port) => true;
+            return client;
+          };
 
           var response = await dio.post(
-            'https://www.recovery.starkinsolutions.com/agency_details.php',
+            'https://okrepo.in/agency_details.php',
             data: jsonEncode({
               "agency_id": agencyId,
             }),

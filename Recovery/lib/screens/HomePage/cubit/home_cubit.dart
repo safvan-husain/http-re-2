@@ -9,7 +9,7 @@ import 'package:recovery_app/models/search_settings.dart';
 import 'package:recovery_app/models/subscription_details.dart';
 
 import 'package:recovery_app/models/user_model.dart';
-import 'package:recovery_app/screens/authentication/otp_login.dart';
+import 'package:recovery_app/screens/authentication/login.dart';
 import 'package:recovery_app/services/csv_file_service.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
@@ -35,7 +35,7 @@ class HomeCubit extends Cubit<HomeState> {
     ));
     if (await isDeviceChangedOnServer() && context.mounted) {
       Navigator.of(context)
-          .push(MaterialPageRoute(builder: (c) => const OtpLogin()));
+          .push(MaterialPageRoute(builder: (c) => const Login()));
     }
 
     SubscriptionDetails? subDetails = await HomeServices.getSubscription(
@@ -88,8 +88,9 @@ class HomeCubit extends Cubit<HomeState> {
     emit(state.copyWith(estimatedTime: timeString));
   }
 
-  void updateDataCount() async {
-    int totalEntries = await DatabaseHelper.getTotalEntries();
+  Future<void> updateDataCount() async {
+    int totalEntries =
+        Storage.getOnineCount() ?? await DatabaseHelper.getTotalEntries();
     print("totalEntries : $totalEntries");
     emit(state.copyWith(
       entryCount: totalEntries,
@@ -97,21 +98,25 @@ class HomeCubit extends Cubit<HomeState> {
     ));
   }
 
+  Future<void> updateDataCountOnline(int count) async {
+    await Storage.setOnlineCount(count);
+    emit(state.copyWith(
+      entryCount: count,
+      changeType: ChangeType.vehicleOwnerListUpdated,
+    ));
+  }
+
   Future<void> downloadData() async {
     emit(state.copyWith(changeType: ChangeType.loading));
-    try {
-      log("before download");
-      await CsvFileServices.updateData(
-        state.user!.agencyId,
-        // "3",
-        state.streamController,
-        this,
-      );
-      log("after download");
-    } catch (e) {
-      print(e);
-      // rethrow;
-    }
+    log("before download");
+    await CsvFileServices.updateData(
+      AgencyDetails().id,
+      // "3",
+      state.streamController,
+      this,
+    );
+    log("after download");
+
     emit(
       state.copyWith(
         changeType: ChangeType.vehicleOwnerListUpdated,

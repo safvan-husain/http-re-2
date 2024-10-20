@@ -128,7 +128,7 @@ class _UserViewState extends State<UserView> {
                         value: isActive,
                         // changes the state of the switch
                         onChanged: (v) {
-                          ControlPanelService.switchAdminAccess(
+                          ControlPanelService.switchActiveAccess(
                             v,
                             widget.agent.id,
                           );

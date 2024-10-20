@@ -18,6 +18,7 @@ import 'package:recovery_app/screens/search/search_screen.dart';
 import 'package:recovery_app/services/csv_file_service.dart';
 import 'package:recovery_app/services/home_service.dart';
 import 'package:recovery_app/services/agency_details_services.dart';
+import 'package:recovery_app/services/remote_sql_services.dart';
 import 'package:recovery_app/services/utils.dart';
 import 'package:recovery_app/storage/user_storage.dart';
 
@@ -357,11 +358,12 @@ class _HomePageState extends State<HomePage> {
           InkWell(
             onTap: () async {
               //FIXME:disable navigation for debugging.
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (c) => NotificationScreen(),
-                ),
-              );
+              // Navigator.of(context).push(
+              //   MaterialPageRoute(
+              //     builder: (c) => NotificationScreen(),
+              //   ),
+              // );
+              RemoteSqlServices.updateRemoteCount(context.read<HomeCubit>());
             },
             child: Padding(
               padding: const EdgeInsets.only(left: 10),
@@ -396,7 +398,7 @@ class _HomePageState extends State<HomePage> {
     return BlocBuilder<HomeCubit, HomeState>(
       builder: (context, state) {
         return Container(
-          height: 200,
+          height: 250,
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -414,23 +416,43 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             children: [
               Expanded(
-                flex: 2,
                 child: Image.asset(
                   'assets/icons/logo.png',
                   fit: BoxFit.fitHeight,
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    state.data.agencyDetails.agencyName,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  state.data.agencyDetails.agencyName,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
                   ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  state.data.agencyDetails.contact,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  // "kfjlkafj, kajefkj, jaflkjeflkf, jefkjahefjk, jfkhaejf, jakefhakjhf, jhekjfhaekjfhe, jahfkjafh",
+                  state.data.agencyDetails.address,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               )
             ],
